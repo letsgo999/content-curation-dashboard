@@ -1,0 +1,9 @@
+{
+  "name": "content-curation-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "@google/genai": "^1.15.0",
+    "cheerio": "^1.0.0-rc.12"
+  }
+}
