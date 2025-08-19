@@ -1,5 +1,0 @@
-{
-  "name": "Copy of Content Curation Dashboard",
-  "description": "A web application to curate and display content from YouTube, Facebook, and personal blogs in a clean, card-based interface. Users can add new content via URL, which is automatically analyzed to fetch metadata.",
-  "requestFramePermissions": []
-}
