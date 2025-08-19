@@ -1,15 +1,36 @@
-import React, { useState, useMemo, useCallback } from 'react';
+
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import Header from './components/Header';
 import ContentGrid from './components/ContentGrid';
 import AddContentModal from './components/AddContentModal';
 import { INITIAL_CONTENT_ITEMS } from './constants';
 import type { ContentItem, Platform, SortOrder } from './types';
 
+const LOCAL_STORAGE_KEY = 'contentCurationItems';
+
 const App: React.FC = () => {
-  const [contentItems, setContentItems] = useState<ContentItem[]>(INITIAL_CONTENT_ITEMS);
+  const [contentItems, setContentItems] = useState<ContentItem[]>(() => {
+    try {
+      const savedItems = window.localStorage.getItem(LOCAL_STORAGE_KEY);
+      return savedItems ? JSON.parse(savedItems) : INITIAL_CONTENT_ITEMS;
+    } catch (error) {
+      console.error("Could not load content from local storage", error);
+      return INITIAL_CONTENT_ITEMS;
+    }
+  });
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<Platform | 'all'>('all');
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(contentItems));
+    } catch (error) {
+      console.error("Could not save content to local storage", error);
+    }
+  }, [contentItems]);
+
 
   const handleAddContent = useCallback((newItem: Omit<ContentItem, 'id'>) => {
     const newContentItem: ContentItem = {
