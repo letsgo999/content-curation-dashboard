@@ -1,5 +1,6 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import type { Handler } from "@netlify/functions";
+import * as cheerio from 'cheerio';
 
 // API 키는 Netlify 환경 변수에서 안전하게 로드됩니다.
 if (!process.env.API_KEY) {
@@ -12,15 +13,15 @@ const schema = {
   properties: {
     title: {
       type: Type.STRING,
-      description: "The main title of the article, video, or post. Be concise and accurate."
+      description: "기사, 비디오 또는 게시물의 기본 제목입니다. 간결하고 정확해야 합니다."
     },
     description: {
       type: Type.STRING,
-      description: "A brief summary of the content, suitable for a preview card. Around 150-250 characters."
+      description: "콘텐츠에 대한 간략한 요약으로, 미리보기 카드에 적합합니다. 약 150-250자 정도여야 합니다."
     },
     publishDate: {
       type: Type.STRING,
-      description: "The original publication date of the content. Format it strictly as 'YYYY-MM-DD'."
+      description: "콘텐츠의 원본 발행일입니다. 'YYYY-MM-DD' 형식으로 엄격하게 지정해야 합니다."
     }
   },
   required: ["title", "description"]
@@ -41,23 +42,48 @@ const handler: Handler = async (event) => {
       };
     }
 
-    const prompt = `주어진 URL(${url})의 웹페이지 콘텐츠를 분석하여 다음 정보를 한국어로 추출해 주세요.
+    // 1단계: URL에서 HTML 콘텐츠 가져오기
+    const fetchResponse = await fetch(url, {
+      headers: {
+        // 일부 웹사이트는 봇을 차단하므로 일반적인 브라우저 User-Agent를 사용합니다.
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      }
+    });
 
-1.  **제목 (title)**:
-    - HTML의 <title> 태그에 있는 텍스트를 그대로 가져옵니다.
+    if (!fetchResponse.ok) {
+      return {
+        statusCode: 422, // Unprocessable Entity
+        body: JSON.stringify({ error: `URL을 가져오는 데 실패했습니다: ${fetchResponse.statusText}` })
+      };
+    }
+    const html = await fetchResponse.text();
 
-2.  **설명 (description)**:
-    - 1순위: <meta property="og:description"> 태그의 'content' 속성 값을 추출합니다.
-    - 2순위: 위 태그가 없을 경우, <meta name="description"> 태그의 'content' 속성 값을 추출합니다.
-    - 3순위: 두 태그 모두 없을 경우, 페이지 본문 내용의 첫 부분을 요약하여 150-250자 내외의 설명을 생성합니다.
+    // 2단계: Cheerio를 사용하여 HTML을 파싱하고 관련 텍스트 추출하기
+    const $ = cheerio.load(html);
+    const title = $('title').first().text() || $('h1').first().text();
+    const description = $('meta[name="description"]').attr('content') || $('meta[property="og:description"]').attr('content') || $('p').first().text();
+    
+    // 분석에 불필요한 태그들을 제거하여 본문 텍스트의 품질을 높입니다.
+    $('script, style, nav, footer, header, aside, form').remove(); 
+    const bodyText = $('body').text().replace(/\s\s+/g, ' ').trim().slice(0, 4000); // API 비용과 성능을 위해 텍스트 크기를 제한합니다.
 
-3.  **발행일 (publishDate)**:
-    - 페이지 내에서 콘텐츠가 게시된 날짜를 찾습니다. "게시일", "발행일", "게시자" 등의 키워드 주변 텍스트나, <time> 태그, 또는 <meta property="article:published_time"> 과 같은 메타데이터를 확인합니다.
-    - "8월 3, 2025"와 같은 형식의 날짜를 찾으면 반드시 'YYYY-MM-DD' 형식(예: '2025-08-03')으로 변환해야 합니다.
-    - 정확한 날짜를 식별할 수 없는 경우, 이 필드를 결과에 포함하지 마세요.
+    // 3단계: 추출된 콘텐츠로 프롬프트 구성하기
+    const prompt = `
+      아래는 URL "${url}"에서 추출한 텍스트입니다. 이 내용을 분석하여 JSON 스키마에 따라 한국어로 정보를 제공해주세요.
 
-추출된 정보는 반드시 제공된 JSON 스키마 형식에 맞게 반환해야 합니다.`;
+      추출된 제목: "${title}"
+      추출된 설명: "${description}"
+      추출된 본문 내용: "${bodyText}"
 
+      위 내용을 바탕으로 다음 작업을 수행해주세요:
+      1.  **title**: 추출된 제목을 검토하고 필요한 경우 다듬어주세요. 비어있다면 본문 내용에서 가장 적절한 제목을 생성해주세요.
+      2.  **description**: 추출된 설명을 바탕으로 150-250자 내외의 간결한 요약을 생성해주세요.
+      3.  **publishDate**: 본문 내용에서 "YYYY년 MM월 DD일", "YYYY.MM.DD", 또는 "Month DD, YYYY" 같은 패턴의 발행일을 찾아주세요. 반드시 'YYYY-MM-DD' 형식으로 변환해야 합니다. 날짜를 찾을 수 없다면 이 필드를 결과에 포함하지 마세요.
+
+      오직 JSON 객체만 반환해야 합니다.
+    `;
+
+    // 4단계: Gemini API 호출
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
@@ -76,11 +102,11 @@ const handler: Handler = async (event) => {
     };
 
   } catch (error) {
-    console.error("Error in Gemini Proxy function:", error);
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    console.error("Gemini 프록시 함수 오류:", error);
+    const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: 'Failed to process request.', details: errorMessage }),
+      body: JSON.stringify({ error: '요청 처리 실패.', details: errorMessage }),
     };
   }
 };
