@@ -2,6 +2,7 @@
 [build]
   # 빌드된 정적 파일이 위치한 디렉토리입니다.
   # 이 프로젝트에서는 루트에 index.html이 있으므로 "/"로 설정합니다.
+  command = "npm install"  
   publish = "/"
 
 # Netlify 서버리스 함수에 대한 설정을 정의합니다.
@@ -18,4 +19,5 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
 
