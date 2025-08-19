@@ -1,0 +1,8 @@
+{
+  "name": "content-curation-functions",
+  "version": "1.0.0",
+  "description": "Dependencies for Netlify Functions",
+  "dependencies": {
+    "@google/genai": "^1.14.0"
+  }
+}
