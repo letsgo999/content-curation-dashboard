@@ -15,14 +15,8 @@ const Header: React.FC<HeaderProps> = ({ activeFilter, onFilterChange, sortOrder
   const today = new Date();
   const formattedDate = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일 (${'일월화수목금토'[today.getDay()]})`;
 
+  // Maintain the order of filters
   const filters: (Platform | 'all')[] = ['all', Platform.YouTube, Platform.Facebook, Platform.KakaoTalk, Platform.Blog];
-  const filterNames = {
-    all: '전체',
-    [Platform.YouTube]: PLATFORM_DETAILS[Platform.YouTube].name,
-    [Platform.Facebook]: PLATFORM_DETAILS[Platform.Facebook].name,
-    [Platform.KakaoTalk]: PLATFORM_DETAILS[Platform.KakaoTalk].name,
-    [Platform.Blog]: PLATFORM_DETAILS[Platform.Blog].name,
-  };
 
   return (
     <header className="bg-white p-4 sm:p-6 shadow-md">
@@ -39,8 +33,32 @@ const Header: React.FC<HeaderProps> = ({ activeFilter, onFilterChange, sortOrder
         </div>
         <div className="mt-6 flex flex-wrap gap-2 border-b border-gray-200 pb-3">
           {filters.map((filter) => {
-            const platformDetails = filter !== 'all' ? PLATFORM_DETAILS[filter] : null;
             const isActive = activeFilter === filter;
+
+            if (filter === 'all') {
+              return (
+                <button
+                  key="all"
+                  onClick={() => onFilterChange('all')}
+                  className={`px-4 py-2 text-sm font-semibold rounded-md flex items-center gap-2 transition-colors duration-200 ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow'
+                      : 'bg-white text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  전체
+                </button>
+              );
+            }
+            
+            const platformDetails = PLATFORM_DETAILS[filter];
+
+            // Safely skip rendering if details are somehow missing
+            if (!platformDetails) {
+              console.warn(`Platform details missing for filter: ${filter}`);
+              return null;
+            }
+
             return (
               <button
                 key={filter}
@@ -51,8 +69,8 @@ const Header: React.FC<HeaderProps> = ({ activeFilter, onFilterChange, sortOrder
                     : 'bg-white text-gray-700 hover:bg-gray-100'
                 }`}
               >
-                {platformDetails && <platformDetails.Icon className="w-4 h-4" />}
-                {filterNames[filter]}
+                <platformDetails.Icon className="w-4 h-4" />
+                {platformDetails.name}
               </button>
             );
           })}
