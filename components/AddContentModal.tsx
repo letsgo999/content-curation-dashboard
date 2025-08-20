@@ -72,6 +72,8 @@ const AddContentModal: React.FC<AddContentModalProps> = ({ isOpen, onClose, onAd
         setPlatform(Platform.YouTube);
       } else if (hostname.includes('facebook.com')) {
         setPlatform(Platform.Facebook);
+      } else if (hostname.includes('kakao.com')) {
+        setPlatform(Platform.KakaoTalk);
       } else if (hostname.includes('sonet.kr')) {
         setPlatform(Platform.Blog);
       }
@@ -136,6 +138,7 @@ const AddContentModal: React.FC<AddContentModalProps> = ({ isOpen, onClose, onAd
               >
                 <option value={Platform.YouTube}>유튜브</option>
                 <option value={Platform.Facebook}>페이스북</option>
+                <option value={Platform.KakaoTalk}>카카오톡</option>
                 <option value={Platform.Blog}>블로그</option>
               </select>
             </div>
