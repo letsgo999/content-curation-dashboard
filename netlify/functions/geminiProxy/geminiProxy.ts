@@ -55,33 +55,56 @@ const handler: Handler = async (event) => {
 
     let extractedTitle = '';
     let extractedDescription = '';
+    let extractedPublishDate = '';
     
     const hostname = new URL(url).hostname;
 
     // --- 플랫폼별 맞춤 스크래핑 로직 ---
 
     if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
-      const scriptTagHtml = $('script').filter((i, el) => {
-        return $(el).html()?.includes('ytInitialPlayerResponse') || false;
-      }).html();
+      // Method 1: Most reliable - Parse structured data from ytInitialData
+      try {
+        const scriptTagHtml = $('script').filter((i, el) => {
+          const scriptContent = $(el).html();
+          return scriptContent?.includes('var ytInitialData =') || false;
+        }).html();
 
-      if (scriptTagHtml) {
-        try {
+        if (scriptTagHtml) {
           const jsonString = scriptTagHtml.substring(scriptTagHtml.indexOf('{'), scriptTagHtml.lastIndexOf('}') + 1);
           const ytData = JSON.parse(jsonString);
+          const contents = ytData.contents?.twoColumnWatchNextResults?.results?.results?.contents;
           
-          extractedTitle = ytData?.videoDetails?.title;
+          if (contents && Array.isArray(contents)) {
+              const primaryInfo = contents.find(c => c.videoPrimaryInfoRenderer)?.videoPrimaryInfoRenderer;
+              const secondaryInfo = contents.find(c => c.videoSecondaryInfoRenderer)?.videoSecondaryInfoRenderer;
 
-          const descriptionRuns = ytData?.contents?.twoColumnWatchNextResults?.results?.results?.contents?.[1]?.videoSecondaryInfoRenderer?.description?.runs;
-          if (descriptionRuns && Array.isArray(descriptionRuns)) {
-            extractedDescription = descriptionRuns.map(run => run.text).join('');
-          } else {
-            extractedDescription = ytData?.videoDetails?.shortDescription;
+              if (primaryInfo?.title?.runs?.[0]?.text) {
+                extractedTitle = primaryInfo.title.runs[0].text;
+              }
+
+              if (secondaryInfo?.attributedDescription?.content) {
+                  extractedDescription = secondaryInfo.attributedDescription.content;
+              } else if (secondaryInfo?.description?.runs) {
+                  extractedDescription = secondaryInfo.description.runs.map(run => run.text).join('');
+              }
           }
-        } catch (e) {
-            console.error("YouTube JSON 파싱 실패:", e);
         }
+      } catch (e) {
+          console.error("YouTube JSON 파싱 실패:", e);
       }
+
+      // Method 2 (Fallback): Use specific meta tags which are generally accurate
+      if (!extractedTitle) {
+          extractedTitle = $('meta[property="og:title"]').attr('content')?.trim();
+      }
+      if (!extractedDescription) {
+          extractedDescription = $('meta[property="og:description"]').attr('content')?.trim();
+      }
+      // This meta tag is usually very reliable for the date in YYYY-MM-DD format.
+      if (!extractedPublishDate) {
+        extractedPublishDate = $('meta[itemprop="uploadDate"]').attr('content')?.trim() || '';
+      }
+
     } else if (hostname.includes('kakao.com')) {
       extractedTitle = $('strong.tit_card').first().text().trim();
       extractedDescription = $('p.desc_card').first().text().trim();
@@ -109,12 +132,13 @@ const handler: Handler = async (event) => {
 
       추출된 제목: "${extractedTitle || '없음'}"
       추출된 설명: "${extractedDescription || '없음'}"
-      추출된 본문 일부 (날짜 찾기용): "${bodyText}"
+      ${extractedPublishDate ? `추출된 발행일: "${extractedPublishDate}"` : ''}
+      추출된 본문 일부 (설명/날짜 보완용): "${bodyText}"
 
       지시사항:
-      1.  **title**: '추출된 제목'을 그대로 사용하세요. 절대 변경하거나 새로 만들지 마세요.
-      2.  **description**: '추출된 설명'을 우선적으로 사용하세요. 내용이 충분하다면 그대로 사용하고, 너무 길 경우 150-250자 내외로 자연스럽게 요약하세요. '추출된 설명'이 없다면, '추출된 본문 일부'를 참고하여 새로 생성하세요.
-      3.  **publishDate**: '추출된 본문 일부'에서 발행일을 찾아 'YYYY-MM-DD' 형식으로 변환해주세요. 날짜를 찾을 수 없다면 이 필드를 결과에 포함하지 마세요.
+      1.  **title**: '추출된 제목'을 최우선으로 사용하세요. 만약 이것이 비어있거나 "YouTube"처럼 너무 일반적인 경우, 본문 내용을 참고하여 더 적절한 제목을 만드세요.
+      2.  **description**: '추출된 설명'을 최우선으로 사용하세요. 내용이 충분하다면 그대로 사용하고, 너무 길 경우 150-250자 내외로 자연스럽게 요약하세요. '추출된 설명'이 없다면, '추출된 본문 일부'를 참고하여 새로 생성하세요.
+      3.  **publishDate**: '추출된 발행일'이 있다면, 'YYYY-MM-DD' 형식으로 변환하여 사용하세요. 없다면, '추출된 본문 일부'에서 발행일을 찾아 'YYYY-MM-DD' 형식으로 변환해주세요. 날짜를 찾을 수 없다면 이 필드를 결과에 포함하지 마세요.
 
       오직 JSON 객체만 반환해야 합니다. 다른 설명은 절대 추가하지 마세요.
     `;
