@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import type { ContentItem } from '../types';
 import { PLATFORM_DETAILS, DEFAULT_PLATFORM_DETAILS } from '../constants';
