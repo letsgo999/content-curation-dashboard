@@ -17,14 +17,12 @@ const App: React.FC = () => {
   const getDetailedErrorMessage = (err: unknown, defaultMessage: string): string => {
     if (err instanceof Error) {
         try {
-            // Error from service often is "API request failed: 500 {\"error\":\"...\"}"
             const jsonPart = err.message.substring(err.message.indexOf('{'));
             if (jsonPart) {
                 const errorObj = JSON.parse(jsonPart);
                 return errorObj.error || defaultMessage;
             }
         } catch (e) {
-            // If parsing fails, return the original error message
             return err.message;
         }
         return err.message;
@@ -42,7 +40,7 @@ const App: React.FC = () => {
         setError(null);
       } catch (err) {
         const detailedError = getDetailedErrorMessage(err, '콘텐츠를 불러오는 데 실패했습니다.');
-        setError(`오류: ${detailedError}`);
+        setError(detailedError);
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -87,7 +85,6 @@ const App: React.FC = () => {
         console.error('Share failed:', error);
       }
     } else {
-      // Fallback for browsers that don't support the Web Share API
       navigator.clipboard.writeText(url).then(() => {
         alert('URL이 클립보드에 복사되었습니다.');
       }).catch(err => {
