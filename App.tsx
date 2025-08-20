@@ -37,7 +37,8 @@ const App: React.FC = () => {
       setContentItems(prevItems => [addedItem, ...prevItems]);
     } catch (err) {
         console.error("Failed to add content:", err);
-        alert("콘텐츠 추가에 실패했습니다.");
+        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+        alert(`콘텐츠 추가에 실패했습니다.\n\n오류: ${errorMessage}`);
     }
   }, []);
 
@@ -48,7 +49,8 @@ const App: React.FC = () => {
         setContentItems(prevItems => prevItems.filter(item => item.id !== id));
       } catch (err) {
         console.error("Failed to delete content:", err);
-        alert("콘텐츠 삭제에 실패했습니다.");
+        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+        alert(`콘텐츠 삭제에 실패했습니다.\n\n오류: ${errorMessage}`);
       }
     }
   }, []);
