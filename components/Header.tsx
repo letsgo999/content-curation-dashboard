@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Platform, SortOrder } from '../types';
 import { PLATFORM_DETAILS } from '../constants';
@@ -14,11 +15,12 @@ const Header: React.FC<HeaderProps> = ({ activeFilter, onFilterChange, sortOrder
   const today = new Date();
   const formattedDate = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일 (${'일월화수목금토'[today.getDay()]})`;
 
-  const filters: (Platform | 'all')[] = ['all', Platform.YouTube, Platform.Facebook, Platform.Blog];
+  const filters: (Platform | 'all')[] = ['all', Platform.YouTube, Platform.Facebook, Platform.KakaoTalk, Platform.Blog];
   const filterNames = {
     all: '전체',
     [Platform.YouTube]: PLATFORM_DETAILS[Platform.YouTube].name,
     [Platform.Facebook]: PLATFORM_DETAILS[Platform.Facebook].name,
+    [Platform.KakaoTalk]: PLATFORM_DETAILS[Platform.KakaoTalk].name,
     [Platform.Blog]: PLATFORM_DETAILS[Platform.Blog].name,
   };
 
