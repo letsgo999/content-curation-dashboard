@@ -53,21 +53,20 @@ const Header: React.FC<HeaderProps> = ({ activeFilter, onFilterChange, sortOrder
             
             const platformDetails = PLATFORM_DETAILS[filter];
 
-            // Safely skip rendering if details are somehow missing
             if (!platformDetails) {
               console.warn(`Platform details missing for filter: ${filter}`);
               return null;
             }
+            
+            const activeClass = isActive
+              ? `${platformDetails.activeBgColor} text-white shadow`
+              : 'bg-white text-gray-700 hover:bg-gray-100';
 
             return (
               <button
                 key={filter}
                 onClick={() => onFilterChange(filter)}
-                className={`px-4 py-2 text-sm font-semibold rounded-md flex items-center gap-2 transition-colors duration-200 ${
-                  isActive
-                    ? 'bg-blue-600 text-white shadow'
-                    : 'bg-white text-gray-700 hover:bg-gray-100'
-                }`}
+                className={`px-4 py-2 text-sm font-semibold rounded-md flex items-center gap-2 transition-colors duration-200 ${activeClass}`}
               >
                 <platformDetails.Icon className="w-4 h-4" />
                 {platformDetails.name}
