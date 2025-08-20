@@ -9,7 +9,7 @@ if (!AIRTABLE_API_KEY || !AIRTABLE_BASE_ID || !AIRTABLE_TABLE_ID) {
 const base = new Airtable({ apiKey: AIRTABLE_API_KEY }).base(AIRTABLE_BASE_ID);
 const table = base(AIRTABLE_TABLE_ID);
 
-const formatRecord = (record: any) => ({
+const formatRecord = (record: any): any => ({
   id: record.id,
   ...record.fields,
 });
@@ -22,10 +22,14 @@ const handler: Handler = async (event: HandlerEvent) => {
     switch (event.httpMethod) {
       case 'GET': {
         const records = await table.select({ sort: [{ field: "publishDate", direction: "desc" }] }).all();
+        const formattedRecords = records
+          .map(formatRecord)
+          .filter(record => record.url && record.title); // Filter out incomplete records
+        
         return {
           statusCode: 200,
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(records.map(formatRecord)),
+          body: JSON.stringify(formattedRecords),
         };
       }
       case 'POST': {
@@ -38,7 +42,7 @@ const handler: Handler = async (event: HandlerEvent) => {
         };
       }
       case 'DELETE': {
-        const idToDelete = segments[1];
+        const idToDelete = segments[0]; // Correctly get ID from the first path segment
         if (!idToDelete) {
           return { statusCode: 400, body: 'Record ID is required for deletion.' };
         }
