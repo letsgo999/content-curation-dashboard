@@ -75,17 +75,17 @@ const handler: Handler = async (event) => {
           const contents = ytData.contents?.twoColumnWatchNextResults?.results?.results?.contents;
           
           if (contents && Array.isArray(contents)) {
-              const primaryInfo = contents.find(c => c.videoPrimaryInfoRenderer)?.videoPrimaryInfoRenderer;
-              const secondaryInfo = contents.find(c => c.videoSecondaryInfoRenderer)?.videoSecondaryInfoRenderer;
+              const primaryInfo = contents.find((c: any) => c.videoPrimaryInfoRenderer)?.videoPrimaryInfoRenderer;
+              const secondaryInfo = contents.find((c: any) => c.videoSecondaryInfoRenderer)?.videoSecondaryInfoRenderer;
 
-              if (primaryInfo?.title?.runs?.[0]?.text) {
-                extractedTitle = primaryInfo.title.runs[0].text;
+              if (primaryInfo?.title?.runs) {
+                extractedTitle = primaryInfo.title.runs.map((run: any) => run.text).join('');
               }
 
               if (secondaryInfo?.attributedDescription?.content) {
                   extractedDescription = secondaryInfo.attributedDescription.content;
               } else if (secondaryInfo?.description?.runs) {
-                  extractedDescription = secondaryInfo.description.runs.map(run => run.text).join('');
+                  extractedDescription = secondaryInfo.description.runs.map((run: any) => run.text).join('');
               }
           }
         }
