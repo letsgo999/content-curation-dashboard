@@ -14,6 +14,25 @@ const App: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<Platform | 'all'>('all');
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest');
 
+  const getDetailedErrorMessage = (err: unknown, defaultMessage: string): string => {
+    if (err instanceof Error) {
+        try {
+            // Error from service often is "API request failed: 500 {\"error\":\"...\"}"
+            const jsonPart = err.message.substring(err.message.indexOf('{'));
+            if (jsonPart) {
+                const errorObj = JSON.parse(jsonPart);
+                return errorObj.error || defaultMessage;
+            }
+        } catch (e) {
+            // If parsing fails, return the original error message
+            return err.message;
+        }
+        return err.message;
+    }
+    return defaultMessage;
+  };
+
+
   useEffect(() => {
     const loadContent = async () => {
       try {
@@ -22,7 +41,8 @@ const App: React.FC = () => {
         setContentItems(items);
         setError(null);
       } catch (err) {
-        setError('콘텐츠를 불러오는 데 실패했습니다.');
+        const detailedError = getDetailedErrorMessage(err, '콘텐츠를 불러오는 데 실패했습니다.');
+        setError(`오류: ${detailedError}`);
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -36,8 +56,9 @@ const App: React.FC = () => {
       const addedItem = await createContentItem(newItem);
       setContentItems(prevItems => [addedItem, ...prevItems]);
     } catch (err) {
+      const detailedError = getDetailedErrorMessage(err, '콘텐츠 추가에 실패했습니다. 다시 시도해주세요.');
       console.error("Failed to add content:", err);
-      alert('콘텐츠 추가에 실패했습니다. 다시 시도해주세요.');
+      alert(`콘텐츠 추가 실패: ${detailedError}`);
     }
   }, []);
 
@@ -47,8 +68,9 @@ const App: React.FC = () => {
         await removeContentItem(id);
         setContentItems(prevItems => prevItems.filter(item => item.id !== id));
       } catch (err) {
+        const detailedError = getDetailedErrorMessage(err, '콘텐츠 삭제에 실패했습니다. 다시 시도해주세요.');
         console.error("Failed to delete content:", err);
-        alert('콘텐츠 삭제에 실패했습니다. 다시 시도해주세요.');
+        alert(`콘텐츠 삭제 실패: ${detailedError}`);
       }
     }
   }, []);
