@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import type { ContentItem } from '../types';
-import { PLATFORM_DETAILS } from '../constants';
+import { PLATFORM_DETAILS, DEFAULT_PLATFORM_DETAILS } from '../constants';
 
 type ContentCardProps = {
   item: ContentItem;
@@ -69,7 +69,7 @@ const MoreMenu: React.FC<{ onShare: () => void; onDelete: () => void; }> = ({ on
 
 const ContentCard: React.FC<ContentCardProps> = ({ item, onDelete, onShare }) => {
   const { id, platform, url, title, description, publishDate, views, likes, rating, author } = item;
-  const platformInfo = PLATFORM_DETAILS[platform];
+  const platformInfo = PLATFORM_DETAILS[platform] || DEFAULT_PLATFORM_DETAILS;
 
   const handleShare = () => onShare(url, title);
   const handleDelete = () => onDelete(id);
