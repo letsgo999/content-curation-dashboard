@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import type { Handler } from "@netlify/functions";
 import * as cheerio from 'cheerio';
@@ -58,10 +59,19 @@ const handler: Handler = async (event) => {
     }
     const html = await fetchResponse.text();
 
-    // 2단계: Cheerio를 사용하여 HTML을 파싱하고 관련 텍스트 추출하기
+    // 2단계: Cheerio를 사용하여 HTML을 파싱하고 우선순위에 따라 메타데이터 추출하기
     const $ = cheerio.load(html);
-    const title = $('title').first().text() || $('h1').first().text();
-    const description = $('meta[name="description"]').attr('content') || $('meta[property="og:description"]').attr('content') || $('p').first().text();
+    
+    // 우선순위: Open Graph > 일반 메타 태그 > 제목/H1 태그
+    const title =
+      $('meta[property="og:title"]').attr('content')?.trim() ||
+      $('title').first().text()?.trim() ||
+      $('h1').first().text()?.trim();
+
+    // 우선순위: Open Graph > 일반 메타 태그
+    const description =
+      $('meta[property="og:description"]').attr('content')?.trim() ||
+      $('meta[name="description"]').attr('content')?.trim();
     
     // 분석에 불필요한 태그들을 제거하여 본문 텍스트의 품질을 높입니다.
     $('script, style, nav, footer, header, aside, form').remove(); 
@@ -69,18 +79,18 @@ const handler: Handler = async (event) => {
 
     // 3단계: 추출된 콘텐츠로 프롬프트 구성하기
     const prompt = `
-      아래는 URL "${url}"에서 추출한 텍스트입니다. 이 내용을 분석하여 JSON 스키마에 따라 한국어로 정보를 제공해주세요.
+      아래는 URL "${url}"에서 추출한 정보입니다. 이 내용을 분석하여 JSON 스키마에 따라 한국어로 정보를 제공해주세요.
 
-      추출된 제목: "${title}"
-      추출된 설명: "${description}"
-      추출된 본문 내용: "${bodyText}"
+      추출된 제목: "${title || '없음'}"
+      추출된 설명: "${description || '없음'}"
+      추출된 본문 일부: "${bodyText}"
 
       위 내용을 바탕으로 다음 작업을 수행해주세요:
-      1.  **title**: 추출된 제목을 검토하고 필요한 경우 다듬어주세요. 비어있다면 본문 내용에서 가장 적절한 제목을 생성해주세요.
-      2.  **description**: 추출된 설명을 바탕으로 150-250자 내외의 간결한 요약을 생성해주세요.
-      3.  **publishDate**: 본문 내용에서 "YYYY년 MM월 DD일", "YYYY.MM.DD", 또는 "Month DD, YYYY" 같은 패턴의 발행일을 찾아주세요. 반드시 'YYYY-MM-DD' 형식으로 변환해야 합니다. 날짜를 찾을 수 없다면 이 필드를 결과에 포함하지 마세요.
+      1.  **title**: 추출된 제목이 유효하고 완전한지 검토하고, 필요한 경우 본문 내용을 참고하여 더 나은 제목으로 수정하거나 생성해주세요.
+      2.  **description**: 추출된 설명을 바탕으로 150-250자 내외의 간결하고 매력적인 요약을 생성해주세요. 원본 설명이 이미 훌륭하다면 그대로 사용해도 좋습니다.
+      3.  **publishDate**: 본문 내용에서 발행일을 찾아 'YYYY-MM-DD' 형식으로 변환해주세요. 날짜를 찾을 수 없다면 이 필드를 결과에 포함하지 마세요. 일반적인 날짜 형식("YYYY년 MM월 DD일", "YYYY.MM.DD", "MMMM DD, YYYY" 등)을 찾아보세요.
 
-      오직 JSON 객체만 반환해야 합니다.
+      오직 JSON 객체만 반환해야 합니다. 추가적인 설명이나 코멘트는 포함하지 마세요.
     `;
 
     // 4단계: Gemini API 호출
