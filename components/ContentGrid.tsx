@@ -28,8 +28,9 @@ const ContentGrid: React.FC<ContentGridProps> = ({ items, isLoading, error, onDe
           {error}
         </p>
         <p className="text-gray-600 mt-6 text-sm">
-            <b>해결 방법:</b> Netlify 프로젝트 설정의 <b>Environment variables</b> 메뉴에서, 위 오류 메시지에 보이는 
-            <code>AIRTABLE_BASE_ID</code>와 <code>AIRTABLE_TABLE_NAME</code> 값이 실제 Airtable의 값과 일치하는지 다시 한번 확인해주세요.
+            <b>해결 방법:</b> Netlify 프로젝트 설정의 <b>Environment variables</b> 메뉴에서, 
+            <code>AIRTABLE_BASE_ID</code>와 <code>AIRTABLE_TABLE_ID</code> 값이 실제 Airtable의 값과 일치하는지 다시 한번 확인해주세요.
+            Base ID는 'app'으로 시작하고, Table ID는 'tbl'로 시작해야 합니다.
         </p>
       </div>
     );
