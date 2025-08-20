@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Platform, ContentItem } from '../types';
 import { extractMetadataFromUrl } from '../services/geminiService';
@@ -138,11 +139,12 @@ const AddContentModal: React.FC<AddContentModalProps> = ({ isOpen, onClose, onAd
                 <option value={Platform.Blog}>블로그</option>
               </select>
             </div>
-            <div className="border border-gray-200 bg-gray-50 p-3 rounded-md">
+            <div className="border border-red-300 bg-red-50 p-3 rounded-md">
               <label htmlFor="title" className="block text-sm font-medium text-gray-700">제목 (자동 추출)</label>
               <input type="text" id="title" value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required />
+              <button type="button" className="text-xs text-blue-600 hover:underline mt-1">수동 편집</button>
             </div>
-            <div className="border border-gray-200 bg-gray-50 p-3 rounded-md">
+            <div className="border border-red-300 bg-red-50 p-3 rounded-md">
               <label htmlFor="description" className="block text-sm font-medium text-gray-700">설명 (자동 추출)</label>
               <textarea
                 id="description"
@@ -152,6 +154,7 @@ const AddContentModal: React.FC<AddContentModalProps> = ({ isOpen, onClose, onAd
                 className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
                 required
               />
+              <button type="button" className="text-xs text-blue-600 hover:underline mt-1">수동 편집</button>
             </div>
             <div>
               <label htmlFor="publishDate" className="block text-sm font-medium text-gray-700">발행일</label>
