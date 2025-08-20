@@ -17,8 +17,11 @@ const handler: Handler = async (event) => {
 
   try {
     const newItemData = JSON.parse(event.body || "{}");
+    // Airtable API for creating records expects data to be wrapped in a "records" array.
     const payload = {
-      fields: newItemData,
+      records: [{
+        fields: newItemData,
+      }],
     };
 
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_TABLE_NAME)}`;
@@ -39,7 +42,9 @@ const handler: Handler = async (event) => {
       throw new Error(`Failed to create record in Airtable: ${errorMessage}`);
     }
 
-    const newRecord = await response.json();
+    // The API returns a "records" array, even for a single creation.
+    const newRecordsData = await response.json();
+    const newRecord = newRecordsData.records[0];
     const createdItem: ContentItem = {
       id: newRecord.id,
       ...newRecord.fields,
