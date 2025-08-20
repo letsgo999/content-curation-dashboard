@@ -33,9 +33,10 @@ const handler: Handler = async (event) => {
     });
 
     if (!response.ok) {
-      const errorBody = await response.json();
+      const errorBody = await response.json().catch(() => ({ message: response.statusText }));
       console.error("Airtable API Error:", errorBody);
-      throw new Error(`Failed to create record in Airtable: ${response.statusText}`);
+      const errorMessage = errorBody.error?.message || response.statusText;
+      throw new Error(`Failed to create record in Airtable: ${errorMessage}`);
     }
 
     const newRecord = await response.json();
