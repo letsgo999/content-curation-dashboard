@@ -82,10 +82,13 @@ const handler: Handler = async (event: HandlerEvent) => {
       default:
         return { statusCode: 405, body: 'Method Not Allowed' };
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error("Airtable proxy function error:", error);
-    // The Airtable library provides good error messages.
-    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred.';
+    
+    // Airtable errors are often objects with a 'message' property, not standard Error instances.
+    // This ensures we extract the specific error message for better debugging.
+    const errorMessage = error?.message || 'An unknown error occurred.';
+
     return {
       statusCode: 500,
       body: JSON.stringify({ error: 'Airtable API operation failed.', details: errorMessage }),
