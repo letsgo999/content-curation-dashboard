@@ -31,7 +31,7 @@ const App: React.FC = () => {
     loadContent();
   }, []);
 
-  const handleAddContent = useCallback(async (newItem: Omit<ContentItem, 'id'>) => {
+  const handleAddContent = useCallback(async (newItem: Omit<ContentItem, 'id' | 'views' | 'likes' | 'rating' | 'author'>) => {
     try {
       const addedItem = await addContentItem(newItem);
       setContentItems(prevItems => [addedItem, ...prevItems]);
