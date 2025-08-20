@@ -16,16 +16,25 @@ const handler: Handler = async (event) => {
       body: JSON.stringify({ error: errorMsg }),
     };
   }
-  
-  console.log(`Attempting to add to Airtable. Base ID: ${AIRTABLE_BASE_ID}, Table Name: ${AIRTABLE_TABLE_NAME}`);
+
+  if (!AIRTABLE_BASE_ID.startsWith('app')) {
+    const errorMsg = `Airtable Base ID seems incorrect. It should start with 'app'. Current value: '${AIRTABLE_BASE_ID}'. Please check your environment variables.`;
+    console.error(errorMsg);
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: errorMsg }),
+    };
+  }
 
   try {
     const newItemData = JSON.parse(event.body || "{}");
     
-    // Airtable API는 단일 레코드 생성 시 'records' 배열 래퍼 없이 'fields' 객체만 요구할 수 있습니다.
-    // 기존 'records' 배열 래핑 방식에서 이 방식으로 변경하여 API 호환성 문제를 해결합니다.
     const payload = {
-      fields: newItemData
+      records: [
+        {
+          fields: newItemData,
+        },
+      ],
     };
 
     const url = `https://api.airtable.com/v0/${AIRTABLE_BASE_ID}/${encodeURIComponent(AIRTABLE_TABLE_NAME)}`;
@@ -36,25 +45,18 @@ const handler: Handler = async (event) => {
         Authorization: `Bearer ${AIRTABLE_API_KEY}`,
         "Content-Type": "application/json",
       },
-      // Airtable API는 여러 레코드를 생성할 때와 단일 레코드를 생성할 때 다른 페이로드 구조를 요구할 수 있습니다.
-      // 여기서는 단일 레코드 생성을 시도하고 있으므로, `records` 배열로 감싸지 않은 페이로드를 전송합니다.
-      body: JSON.stringify({ records: [ payload ]}),
+      body: JSON.stringify(payload),
     });
 
     if (!response.ok) {
       const errorBody = await response.json().catch(() => ({ message: `Airtable returned status ${response.status}` }));
       console.error("Airtable API Error:", JSON.stringify(errorBody, null, 2));
-      const errorMessage = errorBody.error?.message || errorBody.message || "Unknown Airtable API error";
-      // 403 Forbidden 오류는 보통 권한 문제이지만, 때로는 잘못된 요청 본문(body) 때문에 발생하기도 합니다.
-      if (response.status === 403) {
-          return {
-              statusCode: 500,
-              body: JSON.stringify({ error: `Airtable request forbidden. Check API Key, Base ID, and token permissions. Details: ${errorMessage}`})
-          }
-      }
+      const airtableErrorMessage = errorBody.error?.message || errorBody.message || "Unknown Airtable API error";
+      const detailedError = `Failed to create record in Airtable using Base ID: '${AIRTABLE_BASE_ID}' and Table Name: '${AIRTABLE_TABLE_NAME}'.\n\nAirtable says: "${airtableErrorMessage}"`;
+
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: `Failed to create record in Airtable: ${errorMessage}` }),
+        body: JSON.stringify({ error: detailedError }),
       };
     }
     
