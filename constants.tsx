@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ContentItem, Platform } from './types';
 
@@ -19,9 +20,9 @@ export const BlogIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
-export const GenericLinkIcon = ({ className }: { className?: string }) => (
+export const KakaoTalkIcon = ({ className }: { className?: string }) => (
     <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M10.59 13.41c.41-.39.41-1.02 0-1.41-.39-.39-1.02-.39-1.41 0l-1.83 1.83c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.83-1.83zM14.83 9.17c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41l1.83 1.83c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41l-1.83-1.83zM4.93 19.07c1.56 1.56 4.09 1.56 5.66 0l2.83-2.83c.39-.39.39-1.02 0-1.41-.39-.39-1.02-.39-1.41 0l-2.83 2.83c-.78.78-2.05.78-2.83 0-.78-.78-.78-2.05 0-2.83l2.83-2.83c.39-.39.39-1.02 0-1.41-.39-.39-1.02-.39-1.41 0l-2.83 2.83c-1.56 1.56-1.56 4.09 0 5.66zM17.66 4.93c-1.56-1.56-4.09-1.56-5.66 0l-2.83 2.83c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l2.83-2.83c.78-.78 2.05-.78 2.83 0 .78.78.78 2.05 0 2.83l-2.83 2.83c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l2.83-2.83c1.56-1.56 1.56-4.09 0-5.66z"/>
+        <path d="M12 2C6.486 2 2 5.589 2 10.009c0 2.454 1.353 4.685 3.473 6.035L4.03 22l5.48-3.045c.81.215 1.66.329 2.52.329 5.514 0 10-3.589 10-8.284C22 5.589 17.514 2 12 2z" />
     </svg>
 );
 
@@ -33,6 +34,7 @@ export const PLATFORM_DETAILS = {
     color: 'text-red-600',
     bgColor: 'bg-red-100',
     borderColor: 'border-red-200',
+    activeBgColor: 'bg-red-600',
   },
   [Platform.Facebook]: {
     name: '페이스북',
@@ -40,6 +42,7 @@ export const PLATFORM_DETAILS = {
     color: 'text-blue-600',
     bgColor: 'bg-blue-100',
     borderColor: 'border-blue-200',
+    activeBgColor: 'bg-blue-600',
   },
   [Platform.Blog]: {
     name: '블로그',
@@ -47,15 +50,16 @@ export const PLATFORM_DETAILS = {
     color: 'text-green-600',
     bgColor: 'bg-green-100',
     borderColor: 'border-green-200',
+    activeBgColor: 'bg-green-600',
   },
-};
-
-export const DEFAULT_PLATFORM_DETAILS = {
-    name: '기타',
-    Icon: GenericLinkIcon,
-    color: 'text-gray-600',
-    bgColor: 'bg-gray-100',
-    borderColor: 'border-gray-200',
+  [Platform.KakaoTalk]: {
+    name: '카카오톡',
+    Icon: KakaoTalkIcon,
+    color: 'text-yellow-600',
+    bgColor: 'bg-yellow-100',
+    borderColor: 'border-yellow-200',
+    activeBgColor: 'bg-yellow-500',
+  },
 };
 
 export const INITIAL_CONTENT_ITEMS: ContentItem[] = [];
