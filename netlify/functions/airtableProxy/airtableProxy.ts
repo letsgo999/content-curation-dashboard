@@ -11,7 +11,6 @@ const base = new Airtable({ apiKey: AIRTABLE_API_KEY }).base(AIRTABLE_BASE_ID);
 const table = base(AIRTABLE_TABLE_ID);
 
 // --- Platform Name Translation Layer ---
-// Maps internal app platform names (English) to Airtable-friendly names (Korean)
 const PLATFORM_APP_TO_DB: Record<string, string> = {
   'YouTube': '유튜브',
   'Facebook': '페이스북',
@@ -19,14 +18,12 @@ const PLATFORM_APP_TO_DB: Record<string, string> = {
   'KakaoTalk': '카카오톡',
 };
 
-// Maps Airtable names (Korean) back to internal app names (English)
 const PLATFORM_DB_TO_APP: Record<string, string> = Object.fromEntries(
   Object.entries(PLATFORM_APP_TO_DB).map(([key, value]) => [value, key])
 );
 
 const formatRecordForApp = (record: any): any => {
     const fields = record.fields;
-    // Translate platform name from DB (Korean) to App (English)
     if (fields.platform && PLATFORM_DB_TO_APP[fields.platform]) {
         fields.platform = PLATFORM_DB_TO_APP[fields.platform];
     }
@@ -38,12 +35,30 @@ const formatRecordForApp = (record: any): any => {
 
 const formatDataForDb = (data: any): any => {
     const fields = { ...data };
-    // Translate platform name from App (English) to DB (Korean)
     if (fields.platform && PLATFORM_APP_TO_DB[fields.platform]) {
         fields.platform = PLATFORM_APP_TO_DB[fields.platform];
     }
     return fields;
-}
+};
+
+// --- Data Sanitization Layer ---
+const sanitizeFields = (fields: any): { [key: string]: any } => {
+    const sanitized: { [key: string]: any } = {};
+    // Airtable long text fields have a 100k character limit, but being defensive is good.
+    const MAX_STRING_LENGTH = 15000; 
+
+    for (const key in fields) {
+        if (Object.prototype.hasOwnProperty.call(fields, key)) {
+            const value = fields[key];
+            if (typeof value === 'string') {
+                sanitized[key] = value.substring(0, MAX_STRING_LENGTH);
+            } else if (value !== null && value !== undefined) {
+                sanitized[key] = value;
+            }
+        }
+    }
+    return sanitized;
+};
 
 
 const handler: Handler = async (event: HandlerEvent) => {
@@ -55,8 +70,8 @@ const handler: Handler = async (event: HandlerEvent) => {
       case 'GET': {
         const records = await table.select({ sort: [{ field: "publishDate", direction: "desc" }] }).all();
         const formattedRecords = records
-          .map(formatRecordForApp) // Use the new formatting function
-          .filter(record => record.url && record.title); // Filter out incomplete records
+          .map(formatRecordForApp)
+          .filter(record => record.url && record.title);
         
         return {
           statusCode: 200,
@@ -66,7 +81,9 @@ const handler: Handler = async (event: HandlerEvent) => {
       }
       case 'POST': {
         const data = JSON.parse(event.body || '{}');
-        const fieldsForDb = formatDataForDb(data);
+        const translatedData = formatDataForDb(data);
+        const fieldsForDb = sanitizeFields(translatedData); // Sanitize before creating
+
         const createdRecords = await table.create([{ fields: fieldsForDb }]);
         return {
           statusCode: 201,
