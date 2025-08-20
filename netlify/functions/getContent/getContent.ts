@@ -21,7 +21,10 @@ const handler: Handler = async () => {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch from Airtable: ${response.statusText}`);
+      const errorBody = await response.json().catch(() => ({ message: response.statusText }));
+      console.error("Airtable API Error:", errorBody);
+      const errorMessage = errorBody.error?.message || response.statusText;
+      throw new Error(`Failed to fetch from Airtable: ${errorMessage}`);
     }
 
     const data = await response.json();
