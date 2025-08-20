@@ -1,7 +1,9 @@
+
 export enum Platform {
   YouTube = 'YouTube',
   Facebook = 'Facebook',
   Blog = 'Blog',
+  KakaoTalk = 'KakaoTalk',
 }
 
 export interface ContentItem {
