@@ -19,6 +19,12 @@ export const BlogIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
+export const GenericLinkIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M10.59 13.41c.41-.39.41-1.02 0-1.41-.39-.39-1.02-.39-1.41 0l-1.83 1.83c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l1.83-1.83zM14.83 9.17c-.39-.39-1.02-.39-1.41 0-.39.39-.39 1.02 0 1.41l1.83 1.83c.39.39 1.02.39 1.41 0 .39-.39.39-1.02 0-1.41l-1.83-1.83zM4.93 19.07c1.56 1.56 4.09 1.56 5.66 0l2.83-2.83c.39-.39.39-1.02 0-1.41-.39-.39-1.02-.39-1.41 0l-2.83 2.83c-.78.78-2.05.78-2.83 0-.78-.78-.78-2.05 0-2.83l2.83-2.83c.39-.39.39-1.02 0-1.41-.39-.39-1.02-.39-1.41 0l-2.83 2.83c-1.56 1.56-1.56 4.09 0 5.66zM17.66 4.93c-1.56-1.56-4.09-1.56-5.66 0l-2.83 2.83c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l2.83-2.83c.78-.78 2.05-.78 2.83 0 .78.78.78 2.05 0 2.83l-2.83 2.83c-.39.39-.39 1.02 0 1.41.39.39 1.02.39 1.41 0l2.83-2.83c1.56-1.56 1.56-4.09 0-5.66z"/>
+    </svg>
+);
+
 
 export const PLATFORM_DETAILS = {
   [Platform.YouTube]: {
@@ -42,6 +48,14 @@ export const PLATFORM_DETAILS = {
     bgColor: 'bg-green-100',
     borderColor: 'border-green-200',
   },
+};
+
+export const DEFAULT_PLATFORM_DETAILS = {
+    name: '기타',
+    Icon: GenericLinkIcon,
+    color: 'text-gray-600',
+    bgColor: 'bg-gray-100',
+    borderColor: 'border-gray-200',
 };
 
 export const INITIAL_CONTENT_ITEMS: ContentItem[] = [];
