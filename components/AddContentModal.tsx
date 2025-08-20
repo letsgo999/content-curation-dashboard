@@ -5,7 +5,7 @@ import { extractMetadataFromUrl } from '../services/geminiService';
 type AddContentModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onAddContent: (item: Omit<ContentItem, 'id' | 'views' | 'likes' | 'rating' | 'author'>) => void;
+  onAddContent: (item: Omit<ContentItem, 'id' | 'rating' | 'author'>) => void;
 };
 
 const AddContentModal: React.FC<AddContentModalProps> = ({ isOpen, onClose, onAddContent }) => {
@@ -56,6 +56,8 @@ const AddContentModal: React.FC<AddContentModalProps> = ({ isOpen, onClose, onAd
       title,
       description,
       publishDate,
+      views: 0,
+      likes: 0,
     });
     onClose();
   };
