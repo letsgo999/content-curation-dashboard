@@ -3,7 +3,6 @@ import { GoogleGenAI, Type } from "@google/genai";
 import type { Handler } from "@netlify/functions";
 import * as cheerio from 'cheerio';
 
-// API 키는 Netlify 환경 변수에서 안전하게 로드됩니다.
 if (!process.env.API_KEY) {
   throw new Error("API_KEY environment variable is not set.");
 }
@@ -28,7 +27,6 @@ const schema = {
   required: ["title", "description"]
 };
 
-
 const handler: Handler = async (event) => {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
@@ -37,63 +35,91 @@ const handler: Handler = async (event) => {
   try {
     const { url } = JSON.parse(event.body || '{}');
     if (!url) {
-      return { 
-        statusCode: 400, 
-        body: JSON.stringify({ error: 'URL is required' }) 
-      };
+      return { statusCode: 400, body: JSON.stringify({ error: 'URL is required' }) };
     }
 
-    // 1단계: URL에서 HTML 콘텐츠 가져오기
     const fetchResponse = await fetch(url, {
       headers: {
-        // 일부 웹사이트는 봇을 차단하므로 일반적인 브라우저 User-Agent를 사용합니다.
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
       }
     });
 
     if (!fetchResponse.ok) {
       return {
-        statusCode: 422, // Unprocessable Entity
+        statusCode: 422,
         body: JSON.stringify({ error: `URL을 가져오는 데 실패했습니다: ${fetchResponse.statusText}` })
       };
     }
     const html = await fetchResponse.text();
-
-    // 2단계: Cheerio를 사용하여 HTML을 파싱하고 우선순위에 따라 메타데이터 추출하기
     const $ = cheerio.load(html);
-    
-    // 우선순위: Open Graph > 일반 메타 태그 > 제목/H1 태그
-    const title =
-      $('meta[property="og:title"]').attr('content')?.trim() ||
-      $('title').first().text()?.trim() ||
-      $('h1').first().text()?.trim();
 
-    // 우선순위: Open Graph > 일반 메타 태그
-    const description =
-      $('meta[property="og:description"]').attr('content')?.trim() ||
-      $('meta[name="description"]').attr('content')?.trim();
+    let extractedTitle = '';
+    let extractedDescription = '';
     
-    // 분석에 불필요한 태그들을 제거하여 본문 텍스트의 품질을 높입니다.
-    $('script, style, nav, footer, header, aside, form').remove(); 
-    const bodyText = $('body').text().replace(/\s\s+/g, ' ').trim().slice(0, 4000); // API 비용과 성능을 위해 텍스트 크기를 제한합니다.
+    const hostname = new URL(url).hostname;
 
-    // 3단계: 추출된 콘텐츠로 프롬프트 구성하기
+    // --- 플랫폼별 맞춤 스크래핑 로직 ---
+
+    if (hostname.includes('youtube.com') || hostname.includes('youtu.be')) {
+      const scriptTagHtml = $('script').filter((i, el) => {
+        return $(el).html()?.includes('ytInitialPlayerResponse') || false;
+      }).html();
+
+      if (scriptTagHtml) {
+        try {
+          const jsonString = scriptTagHtml.substring(scriptTagHtml.indexOf('{'), scriptTagHtml.lastIndexOf('}') + 1);
+          const ytData = JSON.parse(jsonString);
+          
+          extractedTitle = ytData?.videoDetails?.title;
+
+          const descriptionRuns = ytData?.contents?.twoColumnWatchNextResults?.results?.results?.contents?.[1]?.videoSecondaryInfoRenderer?.description?.runs;
+          if (descriptionRuns && Array.isArray(descriptionRuns)) {
+            extractedDescription = descriptionRuns.map(run => run.text).join('');
+          } else {
+            extractedDescription = ytData?.videoDetails?.shortDescription;
+          }
+        } catch (e) {
+            console.error("YouTube JSON 파싱 실패:", e);
+        }
+      }
+    } else if (hostname.includes('kakao.com')) {
+      extractedTitle = $('strong.tit_card').first().text().trim();
+      extractedDescription = $('p.desc_card').first().text().trim();
+    }
+
+    // --- 일반 스크래핑 (폴백) ---
+    if (!extractedTitle) {
+      extractedTitle =
+        $('meta[property="og:title"]').attr('content')?.trim() ||
+        $('title').first().text()?.trim();
+    }
+    if (!extractedDescription) {
+      extractedDescription =
+        $('meta[property="og:description"]').attr('content')?.trim() ||
+        $('meta[name="description"]').attr('content')?.trim();
+    }
+
+    // --- Gemini AI를 위한 본문 텍스트 정리 ---
+    $('script, style, nav, footer, header, aside, form').remove();
+    const bodyText = $('body').text().replace(/\s\s+/g, ' ').trim().slice(0, 3000);
+
+    // --- Gemini AI 프롬프트 구성 ---
     const prompt = `
-      아래는 URL "${url}"에서 추출한 정보입니다. 이 내용을 분석하여 JSON 스키마에 따라 한국어로 정보를 제공해주세요.
+      URL "${url}"에서 아래와 같이 정보를 추출했습니다. 이 정보를 바탕으로 JSON 스키마에 맞춰 결과물을 생성해주세요.
 
-      추출된 제목: "${title || '없음'}"
-      추출된 설명: "${description || '없음'}"
-      추출된 본문 일부: "${bodyText}"
+      추출된 제목: "${extractedTitle || '없음'}"
+      추출된 설명: "${extractedDescription || '없음'}"
+      추출된 본문 일부 (날짜 찾기용): "${bodyText}"
 
-      위 내용을 바탕으로 다음 작업을 수행해주세요:
-      1.  **title**: 추출된 제목이 유효하고 완전한지 검토하고, 필요한 경우 본문 내용을 참고하여 더 나은 제목으로 수정하거나 생성해주세요.
-      2.  **description**: 추출된 설명을 바탕으로 150-250자 내외의 간결하고 매력적인 요약을 생성해주세요. 원본 설명이 이미 훌륭하다면 그대로 사용해도 좋습니다.
-      3.  **publishDate**: 본문 내용에서 발행일을 찾아 'YYYY-MM-DD' 형식으로 변환해주세요. 날짜를 찾을 수 없다면 이 필드를 결과에 포함하지 마세요. 일반적인 날짜 형식("YYYY년 MM월 DD일", "YYYY.MM.DD", "MMMM DD, YYYY" 등)을 찾아보세요.
+      지시사항:
+      1.  **title**: '추출된 제목'을 그대로 사용하세요. 절대 변경하거나 새로 만들지 마세요.
+      2.  **description**: '추출된 설명'을 우선적으로 사용하세요. 내용이 충분하다면 그대로 사용하고, 너무 길 경우 150-250자 내외로 자연스럽게 요약하세요. '추출된 설명'이 없다면, '추출된 본문 일부'를 참고하여 새로 생성하세요.
+      3.  **publishDate**: '추출된 본문 일부'에서 발행일을 찾아 'YYYY-MM-DD' 형식으로 변환해주세요. 날짜를 찾을 수 없다면 이 필드를 결과에 포함하지 마세요.
 
-      오직 JSON 객체만 반환해야 합니다. 추가적인 설명이나 코멘트는 포함하지 마세요.
+      오직 JSON 객체만 반환해야 합니다. 다른 설명은 절대 추가하지 마세요.
     `;
 
-    // 4단계: Gemini API 호출
+    // Gemini API 호출
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
       contents: prompt,
@@ -104,7 +130,7 @@ const handler: Handler = async (event) => {
     });
 
     const textResponse = response.text.trim();
-    
+
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
