@@ -5,7 +5,7 @@ import { extractMetadataFromUrl } from '../services/geminiService';
 type AddContentModalProps = {
   isOpen: boolean;
   onClose: () => void;
-  onAddContent: (item: Omit<ContentItem, 'id'>) => Promise<void>;
+  onAddContent: (item: Omit<ContentItem, 'id'>) => void;
 };
 
 const AddContentModal: React.FC<AddContentModalProps> = ({ isOpen, onClose, onAddContent }) => {
@@ -15,7 +15,6 @@ const AddContentModal: React.FC<AddContentModalProps> = ({ isOpen, onClose, onAd
   const [description, setDescription] = useState('');
   const [publishDate, setPublishDate] = useState(new Date().toISOString().split('T')[0]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -27,7 +26,6 @@ const AddContentModal: React.FC<AddContentModalProps> = ({ isOpen, onClose, onAd
       setDescription('');
       setPublishDate(new Date().toISOString().split('T')[0]);
       setIsLoading(false);
-      setIsSubmitting(false);
       setError('');
     }
   }, [isOpen]);
@@ -46,38 +44,24 @@ const AddContentModal: React.FC<AddContentModalProps> = ({ isOpen, onClose, onAd
     setIsLoading(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !description || !url) {
       setError('모든 필수 필드를 채워주세요.');
       return;
     }
-    
-    setIsSubmitting(true);
-    setError('');
-
-    try {
-      await onAddContent({
-        url,
-        platform,
-        title,
-        description,
-        publishDate,
-        views: 0,
-        likes: 0,
-        rating: 0,
-        author: '신규'
-      });
-      onClose();
-    } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError('알 수 없는 오류가 발생했습니다.');
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+    // New content doesn't have views, likes, or a rating yet.
+    // Omitting these fields prevents sending a default value like 0,
+    // which can cause backend errors for the 'rating' field.
+    onAddContent({
+      url,
+      platform,
+      title,
+      description,
+      publishDate,
+      author: '신규'
+    });
+    onClose();
   };
   
   const detectPlatformFromUrl = (inputUrl: string) => {
@@ -159,8 +143,7 @@ const AddContentModal: React.FC<AddContentModalProps> = ({ isOpen, onClose, onAd
             </div>
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-gray-700">제목 (자동 추출)</label>
-              <input type="text" id="title" value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required />
-              <button type="button" className="text-xs text-blue-600 hover:underline mt-1">수동 편집</button>
+              <input type="text" id="title" value={title} onChange={(e) => setTitle(e.target.value)} className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500" required />
             </div>
             <div>
               <label htmlFor="description" className="block text-sm font-medium text-gray-700">설명 (자동 추출)</label>
@@ -169,10 +152,9 @@ const AddContentModal: React.FC<AddContentModalProps> = ({ isOpen, onClose, onAd
                 rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md"
+                className="mt-1 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
                 required
               />
-              <button type="button" className="text-xs text-blue-600 hover:underline mt-1">수동 편집</button>
             </div>
             <div>
               <label htmlFor="publishDate" className="block text-sm font-medium text-gray-700">발행일</label>
@@ -185,7 +167,7 @@ const AddContentModal: React.FC<AddContentModalProps> = ({ isOpen, onClose, onAd
                 required
               />
             </div>
-            
+            {error && <p className="text-sm text-red-600">{error}</p>}
             <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-md">
                  <div className="flex">
                     <div className="flex-shrink-0">
@@ -200,26 +182,13 @@ const AddContentModal: React.FC<AddContentModalProps> = ({ isOpen, onClose, onAd
                     </div>
                 </div>
             </div>
-            {error && <p className="mt-2 text-sm text-center text-red-600 bg-red-50 p-3 rounded-md">{error}</p>}
           </div>
           <div className="px-6 py-4 bg-gray-50 border-t flex justify-end gap-3">
             <button type="button" onClick={onClose} className="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50">
               취소
             </button>
-            <button 
-              type="submit" 
-              disabled={isSubmitting}
-              className="w-28 bg-blue-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed flex justify-center items-center"
-            >
-              {isSubmitting ? (
-                 <>
-                    <svg className="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span>추가 중...</span>
-                </>
-              ) : '추가하기'}
+            <button type="submit" className="bg-blue-600 py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white hover:bg-blue-700">
+              추가하기
             </button>
           </div>
         </form>
