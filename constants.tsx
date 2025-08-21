@@ -26,20 +26,11 @@ export const KakaoTalkIcon = ({ className }: { className?: string }) => (
     </svg>
 );
 
-export const UnknownIcon = ({ className }: { className?: string }) => (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+export const NewsArticleIcon = ({ className }: { className?: string }) => (
+    <svg className={className} xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M4 6h16v2H4zm0 5h16v2H4zm0 5h16v2H4z"></path><path d="M20 22H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2zM4 4v16h16V4H4z"></path>
     </svg>
 );
-
-export const DEFAULT_PLATFORM_DETAILS = {
-  name: '알 수 없음',
-  Icon: UnknownIcon,
-  color: 'text-gray-600',
-  bgColor: 'bg-gray-100',
-  borderColor: 'border-gray-200',
-  activeBgColor: 'bg-gray-500',
-};
 
 
 export const PLATFORM_DETAILS = {
@@ -49,7 +40,6 @@ export const PLATFORM_DETAILS = {
     color: 'text-red-600',
     bgColor: 'bg-red-100',
     borderColor: 'border-red-200',
-    activeBgColor: 'bg-red-600',
   },
   [Platform.Facebook]: {
     name: '페이스북',
@@ -57,7 +47,6 @@ export const PLATFORM_DETAILS = {
     color: 'text-blue-600',
     bgColor: 'bg-blue-100',
     borderColor: 'border-blue-200',
-    activeBgColor: 'bg-blue-600',
   },
   [Platform.Blog]: {
     name: '블로그',
@@ -65,7 +54,6 @@ export const PLATFORM_DETAILS = {
     color: 'text-green-600',
     bgColor: 'bg-green-100',
     borderColor: 'border-green-200',
-    activeBgColor: 'bg-green-600',
   },
   [Platform.KakaoTalk]: {
     name: '카카오톡',
@@ -73,7 +61,13 @@ export const PLATFORM_DETAILS = {
     color: 'text-yellow-600',
     bgColor: 'bg-yellow-100',
     borderColor: 'border-yellow-200',
-    activeBgColor: 'bg-yellow-500',
+  },
+  [Platform.NewsArticle]: {
+    name: '뉴스기사',
+    Icon: NewsArticleIcon,
+    color: 'text-gray-700',
+    bgColor: 'bg-gray-200',
+    borderColor: 'border-gray-300',
   },
 };
 
