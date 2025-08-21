@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Platform, ContentItem } from '../types';
 import { extractMetadataFromUrl } from '../services/geminiService';
@@ -73,7 +74,7 @@ const AddContentModal: React.FC<AddContentModalProps> = ({ isOpen, onClose, onAd
         setPlatform(Platform.Facebook);
       } else if (hostname.includes('kakao.com')) {
         setPlatform(Platform.KakaoTalk);
-      } else if (hostname.includes('sonet.kr')) {
+      } else if (hostname.includes('sonet.kr')) { // Assuming sonet.kr is a blog
         setPlatform(Platform.Blog);
       }
     } catch (e) {
@@ -139,6 +140,7 @@ const AddContentModal: React.FC<AddContentModalProps> = ({ isOpen, onClose, onAd
                 <option value={Platform.Facebook}>페이스북</option>
                 <option value={Platform.KakaoTalk}>카카오톡</option>
                 <option value={Platform.Blog}>블로그</option>
+                <option value={Platform.NewsArticle}>뉴스기사</option>
               </select>
             </div>
             <div>
