@@ -4,6 +4,7 @@ export enum Platform {
   Facebook = 'Facebook',
   Blog = 'Blog',
   KakaoTalk = 'KakaoTalk',
+  NewsArticle = '뉴스기사',
 }
 
 export interface ContentItem {
